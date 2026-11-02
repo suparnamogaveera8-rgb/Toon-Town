@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToonTown: Smart Village Data Science</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        emerald: { 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857' },
+                        amber: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- MathJax for LaTeX formatting -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] }
+        };
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .module-card { display: none; }
+        .module-card.active { display: block; animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-track { background: #1f2937; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-100">
+
+    <!-- Navbar -->
+    <nav class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="sprout" class="text-emerald-500 w-8 h-8"></i>
+                    <span class="font-bold text-xl tracking-tight text-emerald-600 dark:text-emerald-400">ToonTown UI</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                        <i data-lucide="moon" id="theme-icon" class="w-5 h-5 text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    <button onclick="toggleEthicsDrawer()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition shadow flex items-center space-x-2">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        <span>Ethics & SDG 8</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 flex-shrink-0">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sticky top-24">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-2">Village Modules</h3>
+                <nav class="space-y-2">
+                    <button onclick="showModule('farmer')" id="nav-farmer" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-lg transition font-medium">
+                        <i data-lucide="tractor" class="w-5 h-5"></i><span>Farmer's Corner</span>
+                    </button>
+                    <button onclick="showModule('shop')" id="nav-shop" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 hover:bg-gray-100 text-gray-600 dark:hover:bg-gray-700 dark:text-gray-300 rounded-lg transition font-medium">
+                        <i data-lucide="store" class="w-5 h-5"></i><span>Smart Shop</span>
+                    </button>
+                    <button onclick="showModule('waste')" id="nav-waste" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 hover:bg-gray-100 text-gray-600 dark:hover:bg-gray-700 dark:text-gray-300 rounded-lg transition font-medium">
+                        <i data-lucide="recycle" class="w-5 h-5"></i><span>Waste Warriors</span>
+                    </button>
+                    <button onclick="showModule('career')" id="nav-career" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 hover:bg-gray-100 text-gray-600 dark:hover:bg-gray-700 dark:text-gray-300 rounded-lg transition font-medium">
+                        <i data-lucide="graduation-cap" class="w-5 h-5"></i><span>Career Quest</span>
+                    </button>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Modules Container -->
+        <main class="flex-1 min-w-0">
+            
+            <!-- Module 1: Farmer's Corner -->
+            <div id="module-farmer" class="module-card active space-y-6">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-t-4 border-emerald-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="cloud-sun" class="text-emerald-500"></i> Farmer's Corner</h2>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full text-xs font-bold border border-blue-200">Math Model: Penman-Monteith $ET_0$</span>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400 mb-6">Predict daily crop water needs based on real-time environmental factors to optimize irrigation and prevent water waste.</p>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="space-y-6 bg-gray-50 dark:bg-gray-700/50 p-5 rounded-lg border border-gray-100 dark:border-gray-600">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Soil Moisture: <span id="val-moisture" class="font-bold text-emerald-600">60</span>%</label>
+                                <input type="range" id="input-moisture" min="10" max="100" value="60" class="w-full accent-emerald-500" oninput="updateFarmer()">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Temperature: <span id="val-temp" class="font-bold text-amber-500">25</span>°C</label>
+                                <input type="range" id="input-temp" min="10" max="45" value="25" class="w-full accent-amber-500" oninput="updateFarmer()">
+                            </div>
+                            <div class="flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/50">
+                                <input type="checkbox" id="input-heatwave" class="w-5 h-5 accent-red-500 rounded" onchange="updateFarmer()">
+                                <label for="input-heatwave" class="text-sm font-bold text-red-700 dark:text-red-400">Simulate Heatwave (+35% Stress)</label>
+                            </div>
+                            <div class="text-sm bg-white dark:bg-gray-800 p-3 rounded shadow-inner overflow-x-auto">
+                                <strong>Formula Calculation:</strong><br>
+                                $$ \text{Water Need} = ET_0 \times K_c \times \left(1 - \frac{\text{Moisture}}{100}\right) \times \text{Risk} $$
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-2 rounded-lg relative h-64">
+                            <canvas id="farmerChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module 2: Smart Shop -->
+            <div id="module-shop" class="module-card space-y-6">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-t-4 border-amber-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="shopping-cart" class="text-amber-500"></i> Smart Shop Forecast</h2>
+                        <span class="px-3 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full text-xs font-bold border border-purple-200">ML Model: Ridge Regression (L2)</span>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400 mb-6">Simulate a multiple linear regression algorithm predicting 7-day demand lifts for local products.</p>
+                    
+                    <!-- Alert Banner -->
+                    <div id="shop-alert" class="hidden mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 dark:bg-red-900/30 dark:text-red-400 flex items-center gap-3">
+                        <i data-lucide="alert-triangle"></i>
+                        <span class="font-bold">Reorder Alert! Projected 7-day demand exceeds current safe inventory thresholds.</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="space-y-6 bg-gray-50 dark:bg-gray-700/50 p-5 rounded-lg border border-gray-100 dark:border-gray-600">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Unit Price ($): $<span id="val-price" class="font-bold">12</span></label>
+                                <input type="range" id="input-price" min="5" max="30" value="12" class="w-full accent-amber-500" oninput="updateShop()">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Discount Rate (%): <span id="val-discount" class="font-bold text-green-600">10</span>%</label>
+                                <input type="range" id="input-discount" min="0" max="50" value="10" class="w-full accent-green-500" oninput="updateShop()">
+                            </div>
+                            <div class="flex items-center space-x-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800/50">
+                                <input type="checkbox" id="input-event" class="w-5 h-5 accent-indigo-500 rounded" onchange="updateShop()">
+                                <label for="input-event" class="text-sm font-bold text-indigo-700 dark:text-indigo-400">Village Festival Active (+Demand)</label>
+                            </div>
+                            <div class="text-sm bg-white dark:bg-gray-800 p-3 rounded shadow-inner overflow-x-auto">
+                                <strong>Ridge Model Formula:</strong><br>
+                                $$ \hat{y} = \beta_0 + \beta_1(Disc) - \beta_2(Price) + \beta_3(Fest) + \lambda\sum\beta_i^2 $$
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-2 rounded-lg relative h-64">
+                            <canvas id="shopChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module 3: Waste Warriors -->
+            <div id="module-waste" class="module-card space-y-6">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-t-4 border-teal-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="trash-2" class="text-teal-500"></i> Waste Warriors</h2>
+                        <span class="px-3 py-1 bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 rounded-full text-xs font-bold border border-teal-200">Data Analytics: Distribution</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Select Village Zone:</label>
+                                <select id="input-zone" onchange="updateWaste()" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700">
+                                    <option value="farm">North Farm</option>
+                                    <option value="market">Central Market</option>
+                                    <option value="residential">Residential Area</option>
+                                    <option value="school">Village School</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Target Reduction Goal: <span id="val-target" class="font-bold text-teal-600">20</span>%</label>
+                                <input type="range" id="input-target" min="0" max="100" value="20" class="w-full accent-teal-500" oninput="updateWaste()">
+                            </div>
+                            <div class="bg-teal-50 dark:bg-teal-900/20 p-4 rounded-lg">
+                                <h4 class="font-bold text-teal-800 dark:text-teal-400 mb-2">Zero-Waste Progress</h4>
+                                <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
+                                    <div id="waste-progress-bar" class="bg-teal-600 h-4 rounded-full transition-all duration-500" style="width: 20%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="relative h-64 flex justify-center">
+                            <canvas id="wasteChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module 4: Career Quest -->
+            <div id="module-career" class="module-card space-y-6">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-t-4 border-indigo-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="briefcase" class="text-indigo-500"></i> Career Quest Matching</h2>
+                        <span class="px-3 py-1 bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200 rounded-full text-xs font-bold border border-pink-200">ML Model: Cosine Similarity Vector</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="font-semibold mb-3">Select Your Competencies:</h3>
+                            <div class="flex flex-wrap gap-2 mb-6" id="skill-container">
+                                <!-- Populated by JS -->
+                            </div>
+                            
+                            <div class="text-sm bg-gray-50 dark:bg-gray-700/50 p-4 rounded border border-gray-100 dark:border-gray-600 overflow-x-auto">
+                                <strong>Vector Math:</strong><br>
+                                $$ \cos(\theta) = \frac{\mathbf{A} \cdot \mathbf{B}}{\|\mathbf{A}\| \|\mathbf{B}\|} = \frac{\sum A_i B_i}{\sqrt{\sum A_i^2}\sqrt{\sum B_i^2}} $$
+                            </div>
+                        </div>
+                        
+                        <div class="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-lg border border-indigo-100 dark:border-indigo-800 flex flex-col justify-center items-center text-center">
+                            <h3 class="text-lg font-bold mb-2">Best Village Role Match:</h3>
+                            <div id="career-result-role" class="text-2xl font-black text-indigo-600 dark:text-indigo-400 mb-2">Select Skills...</div>
+                            <div class="text-5xl font-bold mb-4"><span id="career-result-score">0</span>%</div>
+                            <p id="career-result-desc" class="text-sm text-gray-600 dark:text-gray-300">Choose your skills to run the cosine similarity algorithm against our SDG 8 job profiles.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Ethics Drawer Modal -->
+    <div id="ethics-drawer" class="fixed inset-y-0 right-0 w-full md:w-96 bg-white dark:bg-gray-800 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6 border-b pb-4 dark:border-gray-700">
+                <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="scale"></i> Responsible AI</h2>
+                <button onclick="toggleEthicsDrawer()" class="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"><i data-lucide="x"></i></button>
+            </div>
+            <div class="space-y-6">
+                <div class="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <h3 class="font-bold text-amber-800 dark:text-amber-400 mb-2">UN SDG Goal 8 Alignment</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">ToonTown modules are directly mapped to Target 8.2 (technological upgrading for productivity) and 8.6 (youth skills match).</p>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-2 flex items-center gap-2"><i data-lucide="eye-off" class="w-4 h-4 text-emerald-500"></i> Data Anonymization</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">All village metrics shown in this simulation are synthetically generated. In production, real user PII is stripped before entering the Career Quest vector matrices.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-2 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-blue-500"></i> Bias & Fairness Audits</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">The recommendation model is audited using False Positive Rate (FPR) parity across synthetic demographic clusters to ensure occupational suggestions do not exhibit historical biases.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Drawer Overlay -->
+    <div id="drawer-overlay" class="fixed inset-0 bg-black/50 hidden z-40" onclick="toggleEthicsDrawer()"></div>
+
+    <!-- Scripts and Logic -->
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // --- Theme Management ---
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const icon = document.getElementById('theme-icon');
+            if(document.documentElement.classList.contains('dark')) {
+                icon.setAttribute('data-lucide', 'sun');
+            } else {
+                icon.setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons();
+            // Re-render charts to match theme
+            farmerChartInstance.update();
+            shopChartInstance.update();
+            wasteChartInstance.update();
+        }
+
+        // --- Module Navigation ---
+        function showModule(moduleId) {
+            document.querySelectorAll('.module-card').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('bg-emerald-50', 'text-emerald-700', 'dark:bg-emerald-900/30', 'dark:text-emerald-400');
+                el.classList.add('hover:bg-gray-100', 'text-gray-600', 'dark:hover:bg-gray-700', 'dark:text-gray-300');
+            });
+            
+            document.getElementById('module-' + moduleId).classList.add('active');
+            const activeNav = document.getElementById('nav-' + moduleId);
+            activeNav.classList.remove('hover:bg-gray-100', 'text-gray-600', 'dark:hover:bg-gray-700', 'dark:text-gray-300');
+            activeNav.classList.add('bg-emerald-50', 'text-emerald-700', 'dark:bg-emerald-900/30', 'dark:text-emerald-400');
+            
+            // Trigger MathJax re-render for formulas in case they were hidden
+            if (window.MathJax) { window.MathJax.typesetPromise(); }
+        }
+
+        // --- Drawer Logic ---
+        function toggleEthicsDrawer() {
+            const drawer = document.getElementById('ethics-drawer');
+            const overlay = document.getElementById('drawer-overlay');
+            if(drawer.classList.contains('translate-x-full')) {
+                drawer.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                drawer.classList.add('translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // --- Chart Config Defaults (Theme responsive) ---
+        Chart.defaults.color = () => document.documentElement.classList.contains('dark') ? '#9ca3af' : '#4b5563';
+        Chart.defaults.scale.grid.color = () => document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+        // --- Module 1: Farmer's Corner ---
+        const ctxFarmer = document.getElementById('farmerChart').getContext('2d');
+        let farmerChartInstance = new Chart(ctxFarmer, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Water Need (L/ha)',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        function updateFarmer() {
+            const moisture = document.getElementById('input-moisture').value;
+            const temp = document.getElementById('input-temp').value;
+            const heatwave = document.getElementById('input-heatwave').checked;
+            
+            document.getElementById('val-moisture').innerText = moisture;
+            document.getElementById('val-temp').innerText = temp;
+
+            // Simplified ET0 calculation simulation
+            let baseET = (temp / 25) * 100; 
+            let waterNeed = baseET * (1 - (moisture / 100));
+            if (heatwave) waterNeed *= 1.35; // +35% stress
+
+            // Generate 7 day data with slight variation
+            const data = Array.from({length: 7}, (_, i) => Math.max(0, waterNeed + (Math.sin(i) * 10)));
+            farmerChartInstance.data.datasets[0].data = data;
+            farmerChartInstance.update();
+        }
+
+        // --- Module 2: Smart Shop ---
+        const ctxShop = document.getElementById('shopChart').getContext('2d');
+        let shopChartInstance = new Chart(ctxShop, {
+            type: 'bar',
+            data: {
+                labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+                datasets: [{
+                    label: 'Projected Demand (Units)',
+                    data: [],
+                    backgroundColor: '#f59e0b',
+                    borderRadius: 4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        function updateShop() {
+            const price = parseFloat(document.getElementById('input-price').value);
+            const discount = parseFloat(document.getElementById('input-discount').value);
+            const event = document.getElementById('input-event').checked;
+
+            document.getElementById('val-price').innerText = price;
+            document.getElementById('val-discount').innerText = discount;
+
+            // Ridge Regression simulation coefficients
+            const b0 = 120;
+            const b1 = 3.8; // Discount
+            const b2 = 2.5; // Price
+            const b3 = event ? 50 : 0; // Event flag
+
+            let baseDemand = b0 + (b1 * discount) - (b2 * price) + b3;
+            
+            let totalDemand = 0;
+            const data = Array.from({length: 7}, (_, i) => {
+                let daily = Math.max(10, baseDemand + (Math.random() * 20 - 10)); // adding noise
+                totalDemand += daily;
+                return daily;
+            });
+
+            shopChartInstance.data.datasets[0].data = data;
+            shopChartInstance.update();
+
+            // Threshold logic
+            const alertBox = document.getElementById('shop-alert');
+            if(totalDemand > 700) {
+                alertBox.classList.remove('hidden');
+            } else {
+                alertBox.classList.add('hidden');
+            }
+        }
+
+        // --- Module 3: Waste Warriors ---
+        const ctxWaste = document.getElementById('wasteChart').getContext('2d');
+        let wasteChartInstance = new Chart(ctxWaste, {
+            type: 'doughnut',
+            data: {
+                labels: ['Organic', 'Recyclable', 'Hazardous/E-Waste'],
+                datasets: [{
+                    data: [50, 30, 20],
+                    backgroundColor: ['#10b981', '#3b82f6', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
+        });
+
+        const zoneData = {
+            farm: [70, 20, 10],
+            market: [40, 50, 10],
+            residential: [50, 40, 10],
+            school: [20, 75, 5]
+        };
+
+        function updateWaste() {
+            const zone = document.getElementById('input-zone').value;
+            const target = document.getElementById('input-target').value;
+            
+            document.getElementById('val-target').innerText = target;
+            document.getElementById('waste-progress-bar').style.width = `${target}%`;
+
+            let data = [...zoneData[zone]];
+            // Simulate reduction algorithm based on target
+            data[0] -= data[0] * (target/100) * 0.5; // Organic drops slightly
+            data[2] -= data[2] * (target/100) * 0.8; // Haz drops significantly
+
+            wasteChartInstance.data.datasets[0].data = data;
+            wasteChartInstance.update();
+        }
+
+        // --- Module 4: Career Quest ---
+        const skillsList = ['Python', 'Data Analysis', 'Irrigation Tech', 'Inventory Ops', 'Sales', 'Customer Service', 'Circular Economy', 'Waste Tracking'];
+        const jobProfiles = [
+            { title: "Agri-Tech Data Specialist", vector: [1, 1, 1, 0, 0, 0, 0, 0], desc: "Optimizes smart farming yields using data pipelines." },
+            { title: "Smart Store Manager", vector: [0, 1, 0, 1, 1, 1, 0, 0], desc: "Manages retail forecasting and village supply chains." },
+            { title: "Eco-Systems Technician", vector: [0, 1, 0, 0, 0, 0, 1, 1], desc: "Audits and improves circular waste pathways." }
+        ];
+        
+        let userSkills = new Array(skillsList.length).fill(0);
+
+        function initSkills() {
+            const container = document.getElementById('skill-container');
+            skillsList.forEach((skill, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'px-3 py-1 rounded-full border border-gray-300 dark:border-gray-600 text-sm font-medium transition hover:border-indigo-500';
+                btn.innerText = skill;
+                btn.onclick = () => {
+                    userSkills[index] = userSkills[index] === 0 ? 1 : 0;
+                    btn.classList.toggle('bg-indigo-500');
+                    btn.classList.toggle('text-white');
+                    btn.classList.toggle('border-indigo-500');
+                    calculateCareerMatch();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function calculateCareerMatch() {
+            let bestScore = 0;
+            let bestJob = null;
+
+            // Cosine Similarity Function
+            jobProfiles.forEach(job => {
+                let dotProduct = 0;
+                let normA = 0;
+                let normB = 0;
+                
+                for(let i=0; i<userSkills.length; i++) {
+                    dotProduct += userSkills[i] * job.vector[i];
+                    normA += userSkills[i] * userSkills[i];
+                    normB += job.vector[i] * job.vector[i];
+                }
+
+                if (normA === 0 || normB === 0) return;
+
+                const similarity = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+                const percentage = Math.round(similarity * 100);
+
+                if (percentage > bestScore) {
+                    bestScore = percentage;
+                    bestJob = job;
+                }
+            });
+
+            if (bestJob) {
+                document.getElementById('career-result-score').innerText = bestScore;
+                document.getElementById('career-result-role').innerText = bestJob.title;
+                document.getElementById('career-result-desc').innerText = bestJob.desc;
+            } else {
+                document.getElementById('career-result-score').innerText = 0;
+                document.getElementById('career-result-role').innerText = "Select Skills...";
+                document.getElementById('career-result-desc').innerText = "Choose your skills to run the cosine similarity algorithm.";
+            }
+        }
+
+        // Initialize all modules on load
+        window.onload = () => {
+            updateFarmer();
+            updateShop();
+            updateWaste();
+            initSkills();
+        };
+    </script>
+</body>
+</html>
